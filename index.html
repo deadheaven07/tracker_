@@ -18,6 +18,41 @@
   --shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
   --font-family: system-ui, -apple-system, sans-serif;
 }
+:root[data-theme='dark'] {
+  --bg-dark: #0f172a;
+  --bg-panel: #1e293b;
+  --bg-hover: #334155;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --accent-blue: #60a5fa;
+  --accent-green: #34d399;
+  --accent-red: #f87171;
+  --border: #334155;
+  --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+:root[data-theme='dark'] body,
+:root[data-theme='dark'] .main-content,
+:root[data-theme='dark'] .sidebar,
+:root[data-theme='dark'] .card,
+:root[data-theme='dark'] .dashboard-detail,
+:root[data-theme='dark'] .dashboard-detail-item,
+:root[data-theme='dark'] .list-item,
+:root[data-theme='dark'] input,
+:root[data-theme='dark'] select,
+:root[data-theme='dark'] .topbar,
+:root[data-theme='dark'] .drawer-toggle,
+:root[data-theme='dark'] .theme-toggle,
+:root[data-theme='dark'] .key-btn,
+:root[data-theme='dark'] #auth-screen,
+:root[data-theme='dark'] .dashboard-detail h3,
+:root[data-theme='dark'] .dashboard-detail p,
+:root[data-theme='dark'] .dashboard-detail-item h4,
+:root[data-theme='dark'] .dashboard-detail-item span,
+:root[data-theme='dark'] .list-meta,
+:root[data-theme='dark'] .pin-display,
+:root[data-theme='dark'] .sidebar-header {
+  color: var(--text-main);
+}
 * { box-sizing: border-box; }
 body {
   margin: 0; padding: 0; font-family: var(--font-family);
@@ -72,15 +107,31 @@ body {
 #sidebar-overlay.visible { opacity: 1; visibility: visible; }
 
 .drawer-toggle {
-  position: fixed; top: 18px; right: 18px; z-index: 25;
   display: flex; align-items: center; justify-content: center;
   width: 44px; height: 44px; border-radius: 12px; border: none;
   background: var(--bg-panel); color: var(--text-main); box-shadow: 0 8px 20px rgba(15,23,42,0.08);
-  cursor: pointer; transition: transform 0.2s ease, background 0.2s ease;
+  cursor: pointer; transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
 .drawer-toggle:hover { transform: translateY(-1px); }
 
-.main-content { position: relative; flex-grow: 1; padding: 70px 30px 30px; overflow-y: auto; background: var(--bg-dark); margin-left: 0; }
+.theme-toggle {
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 16px; height: 44px;
+  border-radius: 12px;
+  background: var(--bg-panel);
+  color: var(--text-main);
+  box-shadow: 0 8px 20px rgba(15,23,42,0.08);
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+.theme-toggle:hover { transform: translateY(-1px); }
+.theme-toggle:active { transform: scale(0.98); }
+
+.topbar {
+  display: flex; align-items: center; justify-content: flex-start;
+  gap: 12px; margin-bottom: 22px;
+}
+
+.main-content { position: relative; flex-grow: 1; padding: 30px; overflow-y: auto; background: var(--bg-dark); margin-left: 0; }
 .view-section { display: none; animation: fadeIn 0.3s ease-in-out; }
 .view-section.active { display: block; }
 
@@ -184,7 +235,10 @@ input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; accent-colo
   </aside>
   <div id="sidebar-overlay" onclick="closeSidebar()"></div>
   <main class="main-content">
-    <button class="drawer-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">☰</button>
+    <div class="topbar">
+      <button class="drawer-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">☰</button>
+      <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Switch to dark mode">🌙</button>
+    </div>
     <section id="view-dashboard" class="view-section active">
       <h2>Dashboard</h2>
       <div class="dashboard-grid">
@@ -253,7 +307,8 @@ let appState = {
   tasks: [],
   habits: [],
   health: [],
-  expenses: []
+  expenses: [],
+  theme: 'light'
 };
 
 let currentPin = '';
@@ -284,10 +339,35 @@ function persistData() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
 }
 
+function applyTheme(theme) {
+  const root = document.documentElement;
+  root.dataset.theme = theme;
+  appState.theme = theme;
+  const toggle = document.getElementById('theme-toggle');
+  if (toggle) {
+    if (theme === 'dark') {
+      toggle.innerText = '☀️';
+      toggle.setAttribute('aria-label', 'Switch to light mode');
+    } else {
+      toggle.innerText = '🌙';
+      toggle.setAttribute('aria-label', 'Switch to dark mode');
+    }
+  }
+}
+
+function toggleTheme() {
+  const nextTheme = appState.theme === 'dark' ? 'light' : 'dark';
+  applyTheme(nextTheme);
+  persistData();
+}
+
 function initAuth() {
   const savedData = localStorage.getItem(STORAGE_KEY);
   if (savedData) {
     const parsed = JSON.parse(savedData);
+    if (parsed.theme) {
+      appState.theme = parsed.theme;
+    }
     if (parsed.profile && parsed.profile.pinHash) {
       authMode = 'login';
       document.getElementById('auth-title').innerText = 'Enter Passcode';
@@ -297,6 +377,8 @@ function initAuth() {
   } else {
     setupMode();
   }
+
+  applyTheme(appState.theme);
   document.getElementById('auth-screen').style.display = 'flex';
   document.getElementById('app-container').style.display = 'none';
   currentPin = '';
@@ -354,6 +436,7 @@ function updatePinDisplay() {
 function unlockApp(parsedState) {
   appState = parsedState;
   appState.profile.isLoggedOut = false;
+  appState.theme = appState.theme || 'light';
   
   // Ensure models exist
   appState.tasks = appState.tasks || [];
@@ -365,6 +448,7 @@ function unlockApp(parsedState) {
 
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app-container').style.display = 'flex';
+  applyTheme(appState.theme);
   
   renderAll();
 }
