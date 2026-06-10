@@ -52,6 +52,17 @@ Because this is local-only storage, clearing browser data or switching browsers/
 
 This project is designed as a lightweight personal productivity dashboard. It does not require a backend server, account system, or database, which makes it easy to run and modify.
 
+## 🚀 Wanna Try It?
+
+✨ Experience the live application here:
+### 🔗 [🌐 Launch Tracker App](https://deadheaven07.github.io/tracker_/)
+
+📌 No installation required  
+⚡ Runs directly in your browser  
+🎨 Clean & user-friendly interface  
+🚀 Fast and responsive experience
+
+
 ## 🚧 Status
 
-Under Construction 🚧✨
+Still Under Construction 🚧✨
